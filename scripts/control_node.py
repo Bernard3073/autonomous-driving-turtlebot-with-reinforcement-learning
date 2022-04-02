@@ -7,8 +7,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 import sys
-DATA_PATH = '/home/maestro/catkin_ws/src/master_rad/Data'
-MODULES_PATH = '/home/maestro/catkin_ws/src/master_rad/scripts'
+DATA_PATH = '/home/bo/690_ws/src/690_final_proj/Data'
+MODULES_PATH = '/home/bo/690_ws/src/690_final_proj/scripts'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
@@ -33,11 +33,11 @@ PATH_IND = 4
 
 # Initial & Goal position
 if REAL_ROBOT:
-    X_INIT = 0.0
+    X_INIT = -2.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 1.7
-    Y_GOAL = 1.1
+    X_GOAL = 2.0
+    Y_GOAL = 0.0
     THETA_GOAL = 90
 else:
     RANDOM_INIT_POS = False

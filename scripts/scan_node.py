@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 import sys
-sys.path.insert(0, '/home/maestro/catkin_ws/src/master_rad/scripts')
+sys.path.insert(0, '/home/bo/690_ws/src/master_rad/scripts')
 
 from Qlearning import *
 from Lidar import *

@@ -82,7 +82,7 @@ def robotStop(velPub):
 def robotSetPos(setPosPub, x, y, theta):
     checkpoint = ModelState()
 
-    checkpoint.model_name = 'turtlebot3_burger'
+    checkpoint.model_name = 'turtlebot3_waffle'
 
     checkpoint.pose.position.x = x
     checkpoint.pose.position.y = y
@@ -122,7 +122,7 @@ def robotSetRandomPos(setPosPub):
 
     checkpoint = ModelState()
 
-    checkpoint.model_name = 'turtlebot3_burger'
+    checkpoint.model_name = 'turtlebot3_waffle'
 
     checkpoint.pose.position.x = x
     checkpoint.pose.position.y = y
