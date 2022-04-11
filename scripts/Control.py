@@ -11,10 +11,14 @@ import numpy as np
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 # Q-learning speed parameters
-CONST_LINEAR_SPEED_FORWARD = 0.08
+# CONST_LINEAR_SPEED_FORWARD = 0.08
+# CONST_ANGULAR_SPEED_FORWARD = 0.0
+# CONST_LINEAR_SPEED_TURN = 0.06
+# CONST_ANGULAR_SPEED_TURN = 0.4
+CONST_LINEAR_SPEED_FORWARD = 0.1
 CONST_ANGULAR_SPEED_FORWARD = 0.0
-CONST_LINEAR_SPEED_TURN = 0.06
-CONST_ANGULAR_SPEED_TURN = 0.4
+CONST_LINEAR_SPEED_TURN = 0.2
+CONST_ANGULAR_SPEED_TURN = 0.8
 
 # Feedback control parameters
 K_RO = 2
@@ -23,8 +27,11 @@ K_BETA = -3
 V_CONST = 0.1 # [m/s]
 
 # Goal reaching threshold
-GOAL_DIST_THRESHOLD = 0.1 # [m]
-GOAL_ANGLE_THRESHOLD = 15 # [degrees]
+GOAL_DIST_THRESHOLD = 0.35 # [m]
+GOAL_ANGLE_THRESHOLD = 30 # [degrees]
+
+k_h_gain = 0.3
+k_v_gain = 0.9
 
 # Get theta in [radians]
 def getRotation(odomMsg):
@@ -192,6 +199,46 @@ def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
     velPub.publish(velMsg)
 
     return status
+
+def P_controller(velPub, x_start, y_start, goal_x, goal_y, last_rotation):
+    angle_to_goal = atan2(goal_y - y_start, goal_x - x_start)
+
+    # the domain of arctan(x) is (-inf, inf)
+    # we would like to restrict the domain to (0, 2pi)
+    if angle_to_goal < -pi / 4 or angle_to_goal > pi / 4:
+        if 0 > goal_y > y_start:
+            angle_to_goal = -2 * pi + angle_to_goal
+        elif 0 <= goal_y < y_start:
+            angle_to_goal = 2 * pi + angle_to_goal
+    if last_rotation > pi - 0.1 and rotation <= 0:
+        rotation = 2 * pi + rotation
+    elif last_rotation < -pi + 0.1 and rotation > 0:
+        rotation = -2 * pi + rotation
+
+    # proportional control for rotating the robot
+    w = k_v_gain * angle_to_goal - rotation
+    distance_to_goal = sqrt( pow( ( goal_x - x_start) , 2 ) + pow( ( goal_y - y_start) , 2) )
+    if distance_to_goal <= GOAL_DIST_THRESHOLD:
+        status = 'Goal position reached!'
+        v = 0
+        w = 0
+    else:
+        status = 'Goal position not reached!'
+        # proportional control to move the robot forward
+        # We will drive the robot at a maximum speed of 0.1
+        v = min(k_h_gain * distance_to_goal, CONST_LINEAR_SPEED_FORWARD)
+
+        # set the z angular velocity for positive and negative rotations
+        if w > 0:
+            w = min(w, 1.5)
+        else:
+            w = max(w, -1.5)
+
+    # update the new rotation for the next loop
+    last_rotation = rotation
+    velMsg = createVelMsg(v, w)
+    velPub.publish(velMsg)
+    return status, last_rotation
 
 # Stability Condition
 def check_stability(k_rho, k_alpha, k_beta):

@@ -7,48 +7,25 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 import sys
-DATA_PATH = '/home/bo/690_ws/src/690_final_proj/Data'
-MODULES_PATH = '/home/bo/690_ws/src/690_final_proj/scripts'
+DATA_PATH = '/home/bo/690_ws/src/final_proj/Data'
+MODULES_PATH = '/home/bo/690_ws/src/final_proj/scripts'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
 from Lidar import *
 from Control import *
 
-# Real robot
-REAL_ROBOT = False
 
 # Action parameter
 MIN_TIME_BETWEEN_ACTIONS = 0.0
 
-# Initial and goal positions
-INIT_POSITIONS_X = [ -0.7, -0.7, -0.5, -1, -2]
-INIT_POSITIONS_Y = [ -0.7, 0.7, 1, -2, 1]
-INIT_POSITIONS_THETA = [ 45, -45, -120, -90, 150]
-GOAL_POSITIONS_X = [ 2.0, 2.0, 0.5, 1, 2]
-GOAL_POSITIONS_Y = [ 1.0, -1.0, -1.9, 2, -1,]
-GOAL_POSITIONS_THETA = [ 25.0, -40.0, -40, 60, -30,]
-
-PATH_IND = 4
-
 # Initial & Goal position
-if REAL_ROBOT:
-    X_INIT = -2.0
-    Y_INIT = 0.0
-    THETA_INIT = 0.0
-    X_GOAL = 2.0
-    Y_GOAL = 0.0
-    THETA_GOAL = 90
-else:
-    RANDOM_INIT_POS = False
-
-    X_INIT = INIT_POSITIONS_X[PATH_IND]
-    Y_INIT = INIT_POSITIONS_Y[PATH_IND]
-    THETA_INIT = INIT_POSITIONS_THETA[PATH_IND]
-
-    X_GOAL = GOAL_POSITIONS_X[PATH_IND]
-    Y_GOAL = GOAL_POSITIONS_Y[PATH_IND]
-    THETA_GOAL = GOAL_POSITIONS_THETA[PATH_IND]
+X_INIT = -2.0
+Y_INIT = 0.0
+THETA_INIT = 0.0
+X_GOAL = 2.0
+Y_GOAL = 0.0
+THETA_GOAL = 15
 
 # Log file directory - Q table source
 Q_TABLE_SOURCE = DATA_PATH + '/Log_learning_FINAL'
@@ -97,38 +74,22 @@ if __name__ == '__main__':
 
                 if not robot_in_pos:
                     robotStop(velPub)
-                    # init pos
-                    if REAL_ROBOT:
-                        ( x_init , y_init , theta_init ) = (0, 0, 0)
-                        odomMsg = rospy.wait_for_message('/odom', Odometry)
-                        ( x , y ) = getPosition(odomMsg)
-                        theta = degrees(getRotation(odomMsg))
+                    ( x_init , y_init , theta_init ) = robotSetPos(setPosPub, X_INIT, Y_INIT, THETA_INIT)
+                    # check init pos
+                    odomMsg = rospy.wait_for_message('/odom', Odometry)
+                    ( x , y ) = getPosition(odomMsg)
+                    theta = degrees(getRotation(odomMsg))
+                    print(theta, theta_init)
+                    if abs(x-x_init) < 0.05 and abs(y-y_init) < 0.05 and abs(theta-theta_init) < 2:
                         robot_in_pos = True
                         print('\r\nInitial position:')
                         print('x = %.2f [m]' % x)
                         print('y = %.2f [m]' % y)
                         print('theta = %.2f [degrees]' % theta)
                         print('')
+                        sleep(1)
                     else:
-                        if RANDOM_INIT_POS:
-                            ( x_init , y_init , theta_init ) = robotSetRandomPos(setPosPub)
-                        else:
-                            ( x_init , y_init , theta_init ) = robotSetPos(setPosPub, X_INIT, Y_INIT, THETA_INIT)
-                        # check init pos
-                        odomMsg = rospy.wait_for_message('/odom', Odometry)
-                        ( x , y ) = getPosition(odomMsg)
-                        theta = degrees(getRotation(odomMsg))
-                        print(theta, theta_init)
-                        if abs(x-x_init) < 0.05 and abs(y-y_init) < 0.05 and abs(theta-theta_init) < 2:
-                            robot_in_pos = True
-                            print('\r\nInitial position:')
-                            print('x = %.2f [m]' % x)
-                            print('y = %.2f [m]' % y)
-                            print('theta = %.2f [degrees]' % theta)
-                            print('')
-                            sleep(1)
-                        else:
-                            robot_in_pos = False
+                        robot_in_pos = False
                 else:
                     count = count + 1
                     text = '\r\nStep %d , Step time %.2f s' % (count, step_time)
@@ -145,7 +106,7 @@ if __name__ == '__main__':
                     crash = checkCrash(lidar)
                     object_nearby = checkObjectNearby(lidar)
                     goal_near = checkGoalNear(x, y, X_GOAL, Y_GOAL)
-                    enable_feedback_control = True
+                    enable_feedback_control = False
 
                     # Stop the simulation
                     if crash:

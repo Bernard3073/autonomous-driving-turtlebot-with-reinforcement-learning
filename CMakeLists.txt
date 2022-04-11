@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(690_final_proj)
+project(final_proj)
 
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS rospy std_msgs )
@@ -21,3 +21,13 @@ catkin_install_python(PROGRAMS scripts/control_node.py
 
 ## Build talker and listener
 include_directories(include ${catkin_INCLUDE_DIRS})
+
+install(DIRECTORY meshes/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
+install(DIRECTORY models/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/models
+)
+install(DIRECTORY worlds/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/worlds
+)

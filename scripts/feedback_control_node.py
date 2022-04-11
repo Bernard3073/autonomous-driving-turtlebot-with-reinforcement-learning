@@ -7,17 +7,17 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 import sys
-DATA_PATH = '/home/maestro/catkin_ws/src/master_rad/Data'
-MODULES_PATH = '/home/maestro/catkin_ws/src/master_rad/scripts'
+DATA_PATH = '/home/bo/690_ws/src/690_final_proj/Data'
+MODULES_PATH = '/home/bo/690_ws/src/690_final_proj/scripts'
 sys.path.insert(0, MODULES_PATH)
 
 from Control import *
 
-X_INIT = 0.0
+X_INIT = -2.0
 Y_INIT = 0.0
 THETA_INIT = 0.0
-X_GOAL = 3
-Y_GOAL = 2
+X_GOAL = 2
+Y_GOAL = 0
 THETA_GOAL = 15
 
 # init trajectory
@@ -41,21 +41,21 @@ if __name__ == '__main__':
         setPosPub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size = 10)
         velPub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
 
-        # init log files
-        log_sim_params = open(LOG_DIR+'/LogSimParams.txt','w+')
+        # # init log files
+        # log_sim_params = open(LOG_DIR+'/LogSimParams.txt','w+')
 
-        # log simulation params
-        text = 'Simulation parameters: \r\n'
-        text = text + 'k_rho = %.3f \r\n' % K_RO
-        text = text + 'k_alpha = %.3f \r\n' % K_ALPHA
-        text = text + 'k_beta = %.3f \r\n' % K_BETA
-        text = text + 'v_const = %.3f \r\n' % V_CONST
-        log_sim_params.write(text)
+        # # log simulation params
+        # text = 'Simulation parameters: \r\n'
+        # text = text + 'k_rho = %.3f \r\n' % K_RO
+        # text = text + 'k_alpha = %.3f \r\n' % K_ALPHA
+        # text = text + 'k_beta = %.3f \r\n' % K_BETA
+        # text = text + 'v_const = %.3f \r\n' % V_CONST
+        # log_sim_params.write(text)
 
-        # close log files
-        log_sim_params.close()
+        # # close log files
+        # log_sim_params.close()
 
-        print('\r\n' + text)
+        # print('\r\n' + text)
 
         # check stability
         stab_dict = { True : 'Satisfied!', False : 'Not Satisfied!'}

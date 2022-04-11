@@ -5,7 +5,7 @@ from math import *
 import matplotlib.pyplot as plt
 
 import sys
-DATA_PATH = '/home/maestro/catkin_ws/src/master_rad/Data'
+DATA_PATH = '/home/bo/690_ws/src/690_final_proj/Data'
 sys.path.insert(0, DATA_PATH)
 
 def plot_gamma(log_gamma_1, log_gamma_2, log_gamma_3):

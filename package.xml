@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>690_final_proj</name>
+  <name>final_proj</name>
   <version>0.0.0</version>
-  <description>The 690_final_proj package</description>
+  <description>The final_proj package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

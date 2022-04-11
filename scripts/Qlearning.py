@@ -122,7 +122,7 @@ def getReward(action, prev_action, lidar, prev_lidar, crash):
         lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
         prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
         terminal_state = False
-        # Reward from action taken = fowrad -> +0.2 , turn -> -0.1
+        # Reward from action taken = forward -> +0.2 , turn -> -0.1
         if action == 0:
             r_action = +0.2
         else:
