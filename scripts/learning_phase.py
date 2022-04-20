@@ -42,16 +42,16 @@ Y_START = 0
 THETA_INIT = 0
 
 
-# Q table source file
-Q_SOURCE_DIR = ''
+# The directory of Q table source file
+Q_TABLE_DIR = DATA_PATH + '/Q_table.csv'
 
 
 def initLearning():
     global actions, state_space, Q_table
     actions = createActions()
     state_space = createStateSpace()
-    if os.path.exists(DATA_PATH + '/Q_table.csv'):
-        Q_table = readQTable(Q_SOURCE_DIR+'/Q_table.csv')
+    if os.path.exists(Q_TABLE_DIR):
+        Q_table = readQTable(Q_TABLE_DIR)
     else:
         Q_table = createQTable(len(state_space), len(actions))
 
@@ -233,7 +233,7 @@ def main():
 
                         first_action_taken = True
 
-                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
+                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsilonGreedyExploration => OK'):
                             print('\r\n', status_strat, '\r\n')
                             log_sim_info.write('\r\n'+status_strat+'\r\n')
 
@@ -278,6 +278,8 @@ def main():
                         prev_lidar = lidar
                         prev_action = action
                         prev_state_ind = state_ind
+                        
+            print("Episode: ", episode, "Time: ", t_ep, "Reward: ", ep_reward, "Crash: ", crash, "Epsilon: ", EPSILON, "T: ", T, "Steps: ", ep_steps)
 
     except rospy.ROSInterruptException:
         controller.robotStop(velPub)

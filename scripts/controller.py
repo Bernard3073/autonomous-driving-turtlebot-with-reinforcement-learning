@@ -109,46 +109,6 @@ def robotSetPos(setPosPub, x, y, theta):
     setPosPub.publish(checkpoint)
     return ( x , y , theta )
 
-# Set random initial robot position and orientation
-def robotSetRandomPos(setPosPub):
-    x_range = np.array([-0.4, 0.6, 0.6, -1.4, -1.4, 2.0, 2.0, -2.5, 1.0, -1.0])
-    y_range = np.array([-0.4, 0.6, -1.4, 0.6, -1.4, 1.0, -1.0, 0.0, 2.0, 2.0])
-    theta_range = np.arange(0, 360, 15)
-    #theta_range = np.array([0, 30, 45, 60, 75, 90])
-
-    ind = np.random.randint(0,len(x_range))
-    ind_theta = np.random.randint(0,len(theta_range))
-
-    x = x_range[ind]
-    y = y_range[ind]
-    theta = theta_range[ind_theta]
-
-    checkpoint = ModelState()
-
-    checkpoint.model_name = 'turtlebot3_waffle'
-
-    checkpoint.pose.position.x = x
-    checkpoint.pose.position.y = y
-    checkpoint.pose.position.z = 0.0
-
-    [x_q,y_q,z_q,w_q] = quaternion_from_euler(0.0,0.0,radians(theta))
-
-    checkpoint.pose.orientation.x = x_q
-    checkpoint.pose.orientation.y = y_q
-    checkpoint.pose.orientation.z = z_q
-    checkpoint.pose.orientation.w = w_q
-
-    checkpoint.twist.linear.x = 0.0
-    checkpoint.twist.linear.y = 0.0
-    checkpoint.twist.linear.z = 0.0
-
-    checkpoint.twist.angular.x = 0.0
-    checkpoint.twist.angular.y = 0.0
-    checkpoint.twist.angular.z = 0.0
-
-    setPosPub.publish(checkpoint)
-    return ( x , y , theta )
-
 # Perform an action
 def robotDoAction(velPub, action):
     status = 'robotDoAction => OK'
