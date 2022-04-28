@@ -29,115 +29,104 @@ X_GOAL = 2.0
 Y_GOAL = 0.0
 THETA_GOAL = 0
 
+setPosPub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size = 10)
+velPub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
 
-if __name__ == '__main__':
-    try:
-        rospy.init_node('main', anonymous = False)
-        rate = rospy.Rate(10)
+def main():
+    rospy.init_node('main', anonymous = False)
 
-        setPosPub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size = 10)
-        velPub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
+    actions = createActions()
+    state_space = createStateSpace()
+    Q_table = readQTable(DATA_PATH + '/Q_table.csv')
+    print('Initial Q-table:')
+    print(Q_table)
 
-        actions = createActions()
-        state_space = createStateSpace()
-        Q_table = readQTable(DATA_PATH + '/Q_table.csv')
-        print('Initial Q-table:')
-        print(Q_table)
+    # Init time
+    t_0 = rospy.Time.now()
+    t_start = rospy.Time.now()
 
-        # Init time
-        t_0 = rospy.Time.now()
+    # init timer
+    while not (t_start > t_0):
         t_start = rospy.Time.now()
 
-        # init timer
-        while not (t_start > t_0):
-            t_start = rospy.Time.now()
+    t_step = t_start
+    count = 0
 
-        t_step = t_start
-        count = 0
+    # robot in initial position
+    robot_in_pos = False
 
-        # robot in initial position
-        robot_in_pos = False
+    # because of the video recording
+    sleep(1)
 
-        # because of the video recording
-        sleep(1)
+    # main loop
+    while not rospy.is_shutdown():
+        msgScan = rospy.wait_for_message('/scan', LaserScan)
+        odomMsg = rospy.wait_for_message('/odom', Odometry)
 
-        # main loop
-        while not rospy.is_shutdown():
-            msgScan = rospy.wait_for_message('/scan', LaserScan)
-            odomMsg = rospy.wait_for_message('/odom', Odometry)
+        # Secure the minimum time interval between 2 actions
+        step_time = (rospy.Time.now() - t_step).to_sec()
 
-            # Secure the minimum time interval between 2 actions
-            step_time = (rospy.Time.now() - t_step).to_sec()
+        if step_time > MIN_TIME_BETWEEN_ACTIONS:
+            t_step = rospy.Time.now()
 
-            if step_time > MIN_TIME_BETWEEN_ACTIONS:
-                t_step = rospy.Time.now()
-
-                if not robot_in_pos:
-                    robotStop(velPub)
-                    ( x_init , y_init , theta_init ) = robotSetPos(setPosPub, X_INIT, Y_INIT, THETA_INIT)
-                    # check init pos
-                    odomMsg = rospy.wait_for_message('/odom', Odometry)
-                    ( x , y ) = getPosition(odomMsg)
-                    theta = degrees(getRotation(odomMsg))
-                    print(theta, theta_init)
-                    if abs(x-x_init) < 0.05 and abs(y-y_init) < 0.05 and abs(theta-theta_init) < 2:
-                        robot_in_pos = True
-                        print('\r\nInitial position:')
-                        print('x = %.2f [m]' % x)
-                        print('y = %.2f [m]' % y)
-                        print('theta = %.2f [degrees]' % theta)
-                        print('')
-                        sleep(1)
-                    else:
-                        robot_in_pos = False
+            if not robot_in_pos:
+                robotStop(velPub)
+                ( x_init , y_init , theta_init ) = robotSetPos(setPosPub, X_INIT, Y_INIT, THETA_INIT)
+                # check init pos
+                odomMsg = rospy.wait_for_message('/odom', Odometry)
+                ( x , y ) = getPosition(odomMsg)
+                theta = degrees(getRotation(odomMsg))
+                print(theta, theta_init)
+                if abs(x-x_init) < 0.05 and abs(y-y_init) < 0.05 and abs(theta-theta_init) < 2:
+                    robot_in_pos = True
+                    print('\r\nInitial position:')
+                    print('x = %.2f [m]' % x)
+                    print('y = %.2f [m]' % y)
+                    print('theta = %.2f [degrees]' % theta)
+                    print('')
+                    sleep(1)
                 else:
-                    count += 1
-                    text = '\r\nStep %d , Step time %.2f s' % (count, step_time)
+                    robot_in_pos = False
+            else:
+                count += 1
+                text = '\r\nStep %d' % (count)
 
-                    # Get robot position and orientation
-                    ( x , y ) = getPosition(odomMsg)
-                    theta = getRotation(odomMsg)
+                # Get robot position and orientation
+                ( x , y ) = getPosition(odomMsg)
+                theta = getRotation(odomMsg)
 
-                    # Get lidar scan
-                    ( lidar, angles ) = lidarScan(msgScan)
-                    ( state_ind, x1, x2) = scanDiscretization_twostate(state_space, lidar)
+                # check if the robot reaches the goal
+                if np.sqrt((X_GOAL - x)**2  + (Y_GOAL - y)**2) <= GOAL_DIST_THRESHOLD:
+                    robotStop(velPub)
+                    rospy.signal_shutdown('End of testing!')
+                    text = text + '\r\n\r\nGoal position reached! End of simulation!'
+                
+                # Get lidar scan
+                lidar = lidarScan(msgScan)
+                state_ind = scanDiscretization_twostate(state_space, lidar)
 
-                    # Check for objects nearby
-                    crash = checkCrash(lidar)
-                    object_nearby = checkObjectNearby(lidar)
-                    goal_near = checkGoalNear(x, y, X_GOAL, Y_GOAL)
-                    if np.sqrt((X_GOAL - x)**2  + (Y_GOAL - y)**2) <= GOAL_DIST_THRESHOLD:
-                        robotStop(velPub)
-                        rospy.signal_shutdown('End of testing!')
-                        text = text + '\r\n\r\nGoal position reached! End of simulation!'
+                # Check for objects nearby
+                crash = checkCrash(lidar)
 
-                    # Stop the simulation
-                    if crash:
-                        robotStop(velPub)
-                        rospy.signal_shutdown('End of testing!')
-                        text = text + ' ==> Crash! End of simulation!'
-                        status = 'Crash! End of simulation!'
-                    # Q-learning algorithm
-                    else:
-                        ( action, status ) = getBestAction(Q_table, state_ind, actions)
-                        if not status == 'getBestAction => OK':
-                            print('\r\n', status, '\r\n')
 
-                        status = robotDoAction(velPub, action)
-                        if not status == 'robotDoAction => OK':
-                            print('\r\n', status, '\r\n')
-                        text = text + ' ==> Q-learning algorithm'
+                # Stop the simulation
+                if crash:
+                    robotStop(velPub)
+                    rospy.signal_shutdown('End of testing!')
+                    text = text + ' ==> Crash! End of simulation!'
+                # Q-learning algorithm
+                else:
+                    # Epsilon-greedy policy
+                    action = getBestAction(Q_table, state_ind, actions)
 
-                    text = text + '\r\nx :       %.2f -> %.2f [m]' % (x, X_GOAL)
-                    text = text + '\r\ny :       %.2f -> %.2f [m]' % (y, Y_GOAL)
-                    text = text + '\r\ntheta :   %.2f -> %.2f [degrees]' % (degrees(theta), THETA_GOAL)
+                    robotDoAction(velPub, action)
 
-                    # if status == 'Goal position reached!':
-                    #     robotStop(velPub)
-                    #     rospy.signal_shutdown('End of testing!')
-                    #     text = text + '\r\n\r\nGoal position reached! End of simulation!'
+                print(text)
 
-                    print(text)
+if __name__ == '__main__':
+
+    try:
+        main()
 
     except rospy.ROSInterruptException:
         robotStop(velPub)

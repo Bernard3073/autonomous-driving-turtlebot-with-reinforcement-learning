@@ -27,14 +27,10 @@ def createStateSpace():
     x1 = set((0,1,2))
     x2 = set((0,1,2))
     state_space = set(product(x1,x2))
-    # x3 = set((0,1,2,3))
-    # x4 = set((0,1,2,3))
-    # state_space = set(product(x1,x2,x3,x4))
     return np.array(list(state_space))
 
 # Create Q table, dim: n_states x n_actions
 def createQTable(n_states, n_actions):
-    #Q_table = np.random.uniform(low = -0.05, high = 0, size = (n_states,n_actions) )
     Q_table = np.zeros((n_states, n_actions))
     return Q_table
 
@@ -47,17 +43,15 @@ def readQTable(path):
 def saveQTable(path, Q_table):
     np.savetxt(path, Q_table, delimiter = ' , ')
 
-# Select the best action a in state
+# Select the best action in the state space
 def getBestAction(Q_table, state_ind, actions):
     if STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX:
-        status = 'getBestAction => OK'
         a_ind = np.argmax(Q_table[state_ind,:])
         a = actions[a_ind]
     else:
-        status = 'getBestAction => INVALID STATE INDEX'
         a = getRandomAction(actions)
 
-    return ( a, status )
+    return a
 
 # Select random action from actions
 def getRandomAction(actions):
@@ -68,15 +62,15 @@ def getRandomAction(actions):
 # Epsilon Greedy Exploration action chose
 def epsilonGreedyExploration(Q_table, state_ind, actions, epsilon):
     if np.random.uniform() > epsilon and STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX:
-        status = 'epsiloGreedyExploration => OK'
-        ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
-        if status_gba == 'getBestAction => INVALID STATE INDEX':
-            status = 'epsiloGreedyExploration => INVALID STATE INDEX'
+        # status = 'epsiloGreedyExploration => OK'
+        a = getBestAction(Q_table, state_ind, actions)
+        # if status_gba == 'getBestAction => INVALID STATE INDEX':
+        #     status = 'epsiloGreedyExploration => INVALID STATE INDEX'
     else:
-        status = 'epsiloGreedyExploration => OK'
+        # status = 'epsiloGreedyExploration => OK'
         a = getRandomAction(actions)
 
-    return ( a, status )
+    return a
 
 # Reward function for Q-learning - table
 def getReward(action, prev_action, lidar, prev_lidar, crash):
@@ -108,13 +102,11 @@ def getReward(action, prev_action, lidar, prev_lidar, crash):
         # Cumulative reward
         reward = r_action + r_obstacle + r_change
 
-    return ( reward, terminal_state )
+    return reward
 
 # Update Q-table values
 def updateQTable(Q_table, state_ind, action, reward, next_state_ind, alpha, gamma):
     if STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX and STATE_SPACE_IND_MIN <= next_state_ind <= STATE_SPACE_IND_MAX:
-        status = 'updateQTable => OK'
         Q_table[state_ind,action] = ( 1 - alpha ) * Q_table[state_ind,action] + alpha * ( reward + gamma * max(Q_table[next_state_ind,:]) )
-    else:
-        status = 'updateQTable => INVALID STATE INDEX'
-    return ( Q_table, status )
+
+    return Q_table

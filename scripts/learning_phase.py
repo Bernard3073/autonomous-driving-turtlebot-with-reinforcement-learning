@@ -116,7 +116,6 @@ def main():
         global robot_in_pos, first_action_taken
 
         rospy.init_node('Q_learning_node', anonymous=False)
-        rate = rospy.Rate(10)
 
         setPosPub = rospy.Publisher(
             '/gazebo/set_model_state', ModelState, queue_size=10)
@@ -145,22 +144,14 @@ def main():
 
                 # Log data to file
                 saveQTable(DATA_PATH+'/Q_table.csv', Q_table)
-                # np.savetxt(LOG_FILE_DIR+'/StateSpace.csv',
-                #            state_space, '%d')
 
-                
                 rospy.signal_shutdown('End of learning')
             else:
                 
                 ep_time = (rospy.Time.now() - t_ep).to_sec()
-                # End of en Episode
+                # End of Episode
                 if crash or ep_steps >= MAX_STEPS_PER_EPISODE:
                     controller.robotStop(velPub)
-                    if crash:
-                        # get crash position
-                        odomMsg = rospy.wait_for_message('/odom', Odometry)
-                        (x_crash, y_crash) = controller.getPosition(odomMsg)
-                        theta_crash = degrees(controller.getRotation(odomMsg))
 
                     t_ep = rospy.Time.now()
                     reward_min = np.min(ep_reward_arr)
@@ -214,18 +205,16 @@ def main():
                             robot_in_pos = False
                     # First action
                     elif not first_action_taken:
-                        (lidar, angles) = lidarScan(msgScan)
-                        # 4 state space
-                        # (state_ind, x1, x2, x3, x4) = scanDiscretization(state_space, lidar)
+                        lidar = lidarScan(msgScan)
                         # # 2 state space
-                        (state_ind, x1, x2) = scanDiscretization_twostate(state_space, lidar)
+                        state_ind = scanDiscretization_twostate(state_space, lidar)
                         
                         crash = checkCrash(lidar)
                         # make sure it's convergence
-                        (action, status_strat) = epsilonGreedyExploration(
+                        action = epsilonGreedyExploration(
                                 Q_table, state_ind, actions, T)
 
-                        status_rda = controller.robotDoAction(velPub, action)
+                        controller.robotDoAction(velPub, action)
 
                         prev_lidar = lidar
                         prev_action = action
@@ -233,45 +222,38 @@ def main():
 
                         first_action_taken = True
 
-                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsilonGreedyExploration => OK'):
-                            print('\r\n', status_strat, '\r\n')
-                            log_sim_info.write('\r\n'+status_strat+'\r\n')
-
-                        if not status_rda == 'robotDoAction => OK':
-                            print('\r\n', status_rda, '\r\n')
-                            log_sim_info.write('\r\n'+status_rda+'\r\n')
-
                     # Rest of the algorithm
                     else:
-                        (lidar, angles) = lidarScan(msgScan)
+                        lidar = lidarScan(msgScan)
                         # 4 state space
                         # (state_ind, x1, x2, x3, x4) = scanDiscretization(state_space, lidar)
                         
                         # 2 state space
-                        (state_ind, x1, x2) = scanDiscretization_twostate(state_space, lidar)
+                        state_ind = scanDiscretization_twostate(state_space, lidar)
                         crash = checkCrash(lidar)
 
-                        (reward, terminal_state) = getReward(
+                        reward = getReward(
                             action, prev_action, lidar, prev_lidar, crash)
 
-                        (Q_table, status_uqt) = updateQTable(
+                        Q_table = updateQTable(
                             Q_table, prev_state_ind, action, reward, state_ind, alpha, gamma)
 
                         # apply epsilon greedy exploration
-                        (action, status_strat) = epsilonGreedyExploration(
+                        action= epsilonGreedyExploration(
                                 Q_table, state_ind, actions, T)
 
-                        status_rda = controller.robotDoAction(velPub, action)
+                        controller.robotDoAction(velPub, action)
+                        # status_rda = controller.robotDoAction(velPub, action)
 
-                        if not status_uqt == 'updateQTable => OK':
-                            print('\r\n', status_uqt, '\r\n')
-                            log_sim_info.write('\r\n'+status_uqt+'\r\n')
-                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
-                            print('\r\n', status_strat, '\r\n')
-                            log_sim_info.write('\r\n'+status_strat+'\r\n')
-                        if not status_rda == 'robotDoAction => OK':
-                            print('\r\n', status_rda, '\r\n')
-                            log_sim_info.write('\r\n'+status_rda+'\r\n')
+                        # if not status_uqt == 'updateQTable => OK':
+                        #     print('\r\n', status_uqt, '\r\n')
+                        #     log_sim_info.write('\r\n'+status_uqt+'\r\n')
+                        # if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
+                        #     print('\r\n', status_strat, '\r\n')
+                        #     log_sim_info.write('\r\n'+status_strat+'\r\n')
+                        # if not status_rda == 'robotDoAction => OK':
+                        #     print('\r\n', status_rda, '\r\n')
+                        #     log_sim_info.write('\r\n'+status_rda+'\r\n')
 
                         ep_reward = ep_reward + reward
                         ep_reward_arr = np.append(ep_reward_arr, reward)
@@ -279,7 +261,7 @@ def main():
                         prev_action = action
                         prev_state_ind = state_ind
                         
-            print("Episode: ", episode, "Time: ", t_ep, "Reward: ", ep_reward, "Crash: ", crash, "Epsilon: ", EPSILON, "T: ", T, "Steps: ", ep_steps)
+        print("Episode: ", episode, "Time: ", t_ep, "Reward: ", ep_reward, "Crash: ", crash, "Epsilon: ", EPSILON, "T: ", T, "Steps: ", ep_steps)
 
     except rospy.ROSInterruptException:
         controller.robotStop(velPub)

@@ -21,10 +21,10 @@ GOAL_DIST_THRESHOLD = 0.5
 # Convert LaserScan msg to array
 def lidarScan(msgScan):
     distances = np.array([])
-    angles = np.array([])
+    # angles = np.array([])
 
     for i in range(len(msgScan.ranges)):
-        angle = degrees(i * msgScan.angle_increment)
+        # angle = degrees(i * msgScan.angle_increment)
         if ( msgScan.ranges[i] > MAX_LIDAR_DISTANCE ):
             distance = MAX_LIDAR_DISTANCE
         elif ( msgScan.ranges[i] < msgScan.range_min ):
@@ -36,10 +36,10 @@ def lidarScan(msgScan):
             distance = msgScan.ranges[i]
 
         distances = np.append(distances, distance)
-        angles = np.append(angles, angle)
+        # angles = np.append(angles, angle)
 
     # distances in [m], angles in [degrees]
-    return ( distances, angles )
+    return distances
 
 # Discretization using 2 state space variables of lidar scan
 def scanDiscretization_twostate(state_space, lidar):
@@ -60,13 +60,12 @@ def scanDiscretization_twostate(state_space, lidar):
     elif lidar_right <= ZONE_0_LENGTH:
         x2 = 0 # zone 0
 
-
     # Find the state space index of (x1,x2) in Q table
-    print(state_space)
+    # print(state_space)
     ss = np.where(np.all(state_space == np.array([x1,x2]), axis = 1))
     state_ind = int(ss[0])
 
-    return ( state_ind, x1, x2)
+    return state_ind
 
 # Check - crash
 def checkCrash(lidar):
@@ -88,10 +87,3 @@ def checkObjectNearby(lidar):
     else:
         return False
 
-# Check - goal near
-def checkGoalNear(x, y, x_goal, y_goal):
-    ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
-    if ro < GOAL_DIST_THRESHOLD:
-        return True
-    else:
-        return False

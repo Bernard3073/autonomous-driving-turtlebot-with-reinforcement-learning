@@ -111,7 +111,6 @@ def robotSetPos(setPosPub, x, y, theta):
 
 # Perform an action
 def robotDoAction(velPub, action):
-    status = 'robotDoAction => OK'
     if action == 0:
         robotGoForward(velPub)
     elif action == 1:
@@ -119,10 +118,8 @@ def robotDoAction(velPub, action):
     elif action == 2:
         robotTurnRight(velPub)
     else:
-        status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)
 
-    return status
 
 # Feedback Control Algorithm
 # def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
